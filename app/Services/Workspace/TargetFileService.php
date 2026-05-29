@@ -58,6 +58,8 @@ class TargetFileService
 
     public function readFile(Workspace $workspace, string $relativePath): string
     {
+        $this->safetyGuard->assertSafeRelativePath($workspace, $relativePath);
+
         $path = $this->pathService->safePath($workspace, $relativePath);
 
         if (! is_file($path)) {

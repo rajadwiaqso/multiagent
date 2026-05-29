@@ -18,11 +18,14 @@ class AgentSession extends Model
         'title',
         'mission',
         'status',
+        'mode',
+        'allowed_tools',
         'base_branch',
         'agent_branch',
         'current_agent_id',
         'current_step',
         'max_steps',
+        'max_actions_per_step',
         'summary_context',
         'metadata',
     ];
@@ -32,6 +35,8 @@ class AgentSession extends Model
         return [
             'current_step' => 'integer',
             'max_steps' => 'integer',
+            'max_actions_per_step' => 'integer',
+            'allowed_tools' => 'array',
             'metadata' => 'array',
         ];
     }

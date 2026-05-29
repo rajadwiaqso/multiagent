@@ -3,6 +3,23 @@
 return [
     'target_env_key' => 'TARGET_WORKSPACE_PATH',
 
+    'llm' => [
+        'driver' => env('AGENT_LLM_DRIVER', 'fake'),
+        'base_url' => env('AGENT_LLM_BASE_URL'),
+        'api_key' => env('AGENT_LLM_API_KEY'),
+        'model' => env('AGENT_LLM_MODEL'),
+        'timeout' => env('AGENT_LLM_TIMEOUT', 120),
+        'retry' => [
+            'times' => env('AGENT_LLM_RETRY_TIMES', 1),
+            'sleep_ms' => env('AGENT_LLM_RETRY_SLEEP_MS', 500),
+        ],
+    ],
+
+    'workflow' => [
+        'action_limit_exceeded_status' => env('AGENT_ACTION_LIMIT_EXCEEDED_STATUS', 'paused'),
+        'readonly_planner_max_self_loops' => env('AGENT_READONLY_PLANNER_MAX_SELF_LOOPS', 3),
+    ],
+
     'workspace' => [
         'name' => 'rexmarket',
         'type' => 'laravel-vilt',

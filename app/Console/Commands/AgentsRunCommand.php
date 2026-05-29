@@ -33,11 +33,11 @@ class AgentsRunCommand extends Command
         while ($stepsRun < $maxSteps) {
             $session->refresh();
 
-            if (in_array($session->status, ['paused', 'stopped', 'completed', 'failed'], true)) {
+            if (in_array($session->status, ['paused', 'waiting_approval', 'stopped', 'completed', 'failed'], true)) {
                 break;
             }
 
-            if ($this->option('until-approval') && $this->hasPendingApproval($session)) {
+            if ($this->option('until-approval') && $this->shouldStopUntilApproval($session)) {
                 $this->warn('Pending approval found. Stopping run.');
                 break;
             }
@@ -48,7 +48,7 @@ class AgentsRunCommand extends Command
 
             $this->line("Ran step {$session->current_step}; status {$session->status}; agent ".($session->currentAgent?->name ?: '-'));
 
-            if ($this->option('until-approval') && $this->hasPendingApproval($session)) {
+            if ($this->option('until-approval') && $this->shouldStopUntilApproval($session)) {
                 $this->warn('Pending approval found. Stopping run.');
                 break;
             }
@@ -65,5 +65,14 @@ class AgentsRunCommand extends Command
             ->where('status', 'pending')
             ->where('requires_approval', true)
             ->exists();
+    }
+
+    private function shouldStopUntilApproval(AgentSession $session): bool
+    {
+        $session->refresh();
+
+        return $this->hasPendingApproval($session)
+            || ($session->status === 'paused' && (($session->metadata ?: [])['paused_reason'] ?? null) === 'waiting_approval')
+            || $session->status === 'waiting_approval';
     }
 }

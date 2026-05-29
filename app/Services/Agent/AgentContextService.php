@@ -3,6 +3,7 @@
 namespace App\Services\Agent;
 
 use App\Models\Agent;
+use App\Models\AgentAction;
 use App\Models\AgentMessage;
 use App\Models\AgentSession;
 use Illuminate\Support\Str;
@@ -35,6 +36,19 @@ class AgentContextService
             ->map(fn ($task): string => "- {$task->status}: {$task->title}")
             ->implode(PHP_EOL);
 
+        $actions = $session->actions()
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->reverse()
+            ->map(fn (AgentAction $action): string => sprintf(
+                '- %s: %s%s',
+                $action->status,
+                $action->type,
+                $action->error ? ' error='.Str::limit($action->error, 240) : ''
+            ))
+            ->implode(PHP_EOL);
+
         return implode(PHP_EOL.PHP_EOL, array_filter([
             "Workspace: {$session->workspace->name} ({$session->workspace->type})",
             "Mission: {$session->title}".PHP_EOL.$session->mission,
@@ -42,6 +56,7 @@ class AgentContextService
             "Current agent: {$agent->name} ({$agent->role})".PHP_EOL.$agent->system_prompt,
             $session->summary_context ? "Summary: {$session->summary_context}" : null,
             $tasks ? 'Tasks:'.PHP_EOL.$tasks : null,
+            $actions ? 'Recent actions:'.PHP_EOL.$actions : null,
             $messages ? 'Recent messages:'.PHP_EOL.$messages : null,
         ]));
     }

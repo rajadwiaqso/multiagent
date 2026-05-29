@@ -21,7 +21,7 @@ class TargetGitService
 
     public function status(Workspace $workspace): string
     {
-        return $this->runGit($workspace, ['status', '--short']);
+        return $this->runGit($workspace, ['status', '--short', '--untracked-files=all']);
     }
 
     public function diff(Workspace $workspace, ?string $base = null): string

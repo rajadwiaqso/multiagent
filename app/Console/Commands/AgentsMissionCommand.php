@@ -16,6 +16,9 @@ class AgentsMissionCommand extends Command
         {--base=develop : Base branch}
         {--branch=agent/example : Agent branch}
         {--max-steps=20 : Maximum orchestration steps}
+        {--mode=readonly : Session mode: readonly, suggest, sandbox, auto}
+        {--allow-tools= : Comma-separated tool allow-list for this session}
+        {--max-actions-per-step=5 : Maximum actions processed per LLM step}
         {--mission= : Optional long mission text}';
 
     protected $description = 'Create a mission session and prepare its target agent branch.';
@@ -35,8 +38,27 @@ class AgentsMissionCommand extends Command
         $baseBranch = (string) ($this->option('base') ?: $workspace->base_branch);
         $agentBranch = (string) $this->option('branch');
         $maxSteps = max(1, (int) $this->option('max-steps'));
+        $mode = (string) $this->option('mode');
+        $allowedTools = $this->parseAllowedTools($this->option('allow-tools'));
+        $maxActionsPerStep = max(0, (int) $this->option('max-actions-per-step'));
 
-        $session = $orchestrator->createMission($workspace, $title, $mission, $baseBranch, $agentBranch, $maxSteps);
+        if (! in_array($mode, ['readonly', 'suggest', 'sandbox', 'auto'], true)) {
+            $this->error('Invalid mode. Use readonly, suggest, sandbox, or auto.');
+
+            return self::FAILURE;
+        }
+
+        $session = $orchestrator->createMission(
+            $workspace,
+            $title,
+            $mission,
+            $baseBranch,
+            $agentBranch,
+            $maxSteps,
+            $mode,
+            $allowedTools,
+            $maxActionsPerStep,
+        );
 
         try {
             $gitService->createBranchFromBase($workspace, $baseBranch, $agentBranch);
@@ -58,7 +80,25 @@ class AgentsMissionCommand extends Command
 
         $this->info("Mission created. Session id: {$session->id}");
         $this->line("Branch: {$agentBranch}");
+        $this->line("Mode: {$mode}");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @return array<int, string>|null
+     */
+    private function parseAllowedTools(mixed $allowedTools): ?array
+    {
+        if (! is_string($allowedTools) || trim($allowedTools) === '') {
+            return null;
+        }
+
+        return collect(explode(',', $allowedTools))
+            ->map(fn (string $tool): string => trim($tool))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 }
